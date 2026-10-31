@@ -1,0 +1,21 @@
+{
+  "rules": {
+    "state": {
+      ".write": "newData.child('k').val() === 'HOST_KEY_HERE' && newData.child('v').isString()",
+      "v": { ".read": true }
+    },
+    "votes": {
+      ".read": true,
+      "$s": {
+        "$cid": {
+          ".write": "root.child('state/v').val() === $s + ':vote'",
+          ".validate": "newData.isString() && newData.val().matches(/^[ABCD]$/)"
+        }
+      }
+    },
+    "presence": {
+      ".read": true,
+      "$cid": { ".write": true, ".validate": "newData.val() === true" }
+    }
+  }
+}
