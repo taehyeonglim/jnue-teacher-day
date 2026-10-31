@@ -1,0 +1,5 @@
+node_modules/
+media-local/
+database.rules.json
+.firebaserc
+.DS_Store
