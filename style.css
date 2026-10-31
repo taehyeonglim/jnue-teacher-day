@@ -1,0 +1,149 @@
+/* 오늘 하루, 내가 담임선생님 — jnue-elementary(매력 초과) 톤 */
+:root {
+  --bg: #ffe3ee;
+  --bg2: #fff5f9;
+  --pink: #ff3fa4;
+  --pink-soft: #ffb3d6;
+  --yellow: #ffd93d;
+  --sky: #8fd8ff;
+  --green: #74d680;
+  --violet: #b9a3ff;
+  --ink: #1d1d1f;
+  --muted: #6b5a63;
+  --card: #ffffff;
+  --line: 3px solid var(--ink);
+  --shadow: 5px 5px 0 var(--ink);
+  --r: 18px;
+  --display: "Jua", "Noto Sans KR", sans-serif;
+  --hand: "Gaegu", "Noto Sans KR", sans-serif;
+  --body: "Noto Sans KR", -apple-system, system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--body); line-height: 1.5; word-break: keep-all;
+  -webkit-font-smoothing: antialiased;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(255,217,61,.35) 0 60px, transparent 61px),
+    radial-gradient(circle at 88% 82%, rgba(143,216,255,.35) 0 80px, transparent 81px);
+  background-attachment: fixed;
+}
+h1, h2, h3 { font-family: var(--display); font-weight: 400; margin: 0; text-wrap: balance; }
+em { font-style: normal; color: var(--pink); }
+.muted { color: var(--muted); }
+.kicker { font-family: var(--hand); font-size: 1.2em; color: var(--pink); margin: 0 0 .3em; }
+.badge { display: inline-block; background: var(--yellow); border: var(--line); border-radius: 999px;
+  padding: .15em .8em; font-family: var(--display); }
+.net { position: fixed; inset: 0 0 auto 0; z-index: 50; background: var(--ink); color: var(--yellow);
+  text-align: center; padding: .5em; font-weight: 700; }
+
+/* ── 학생(휴대폰) ── */
+body.student main { max-width: 520px; margin: 0 auto; padding: 20px 16px 48px; }
+.s-wait { text-align: center; padding-top: 18vh; }
+.s-wait h1 { font-size: 2.6rem; line-height: 1.2; margin: .3em 0 .6em; }
+.s-wait .ok { display: inline-block; background: var(--green); border: var(--line); box-shadow: var(--shadow);
+  border-radius: var(--r); padding: .4em 1.2em; font-family: var(--display); font-size: 1.4rem; }
+.s-scene h2 { font-size: 1.7rem; margin: .4em 0 .3em; }
+.s-scene .prompt { background: var(--card); border: var(--line); border-radius: var(--r); box-shadow: var(--shadow);
+  padding: .9em 1em; font-size: 1.05rem; margin: 0 0 .8em; }
+.hint { font-family: var(--hand); font-size: 1.25rem; margin: .2em 0 .6em; color: var(--muted); }
+.hint.open { color: var(--pink); }
+.choices { display: grid; gap: 12px; }
+.choice { display: flex; gap: .7em; align-items: flex-start; text-align: left; width: 100%;
+  font: inherit; font-size: 1rem; color: var(--ink); background: var(--card);
+  border: var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: .8em .9em; cursor: pointer;
+  transition: transform .08s, background .15s; }
+.choice b { flex: none; width: 1.9em; height: 1.9em; display: grid; place-items: center; border-radius: 50%;
+  background: var(--bg); border: 2px solid var(--ink); font-family: var(--display); }
+.choice:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--ink); }
+.choice.on { background: var(--pink); color: #fff; }
+.choice.on b { background: var(--yellow); color: var(--ink); }
+.locked .choice:not(.on) { opacity: .45; }
+.locked .choice { cursor: default; }
+
+.s-result { text-align: center; padding-top: 4vh; }
+.type { background: var(--card); border: var(--line); border-radius: var(--r); box-shadow: var(--shadow);
+  padding: 1em; margin: .6em 0 1em; }
+.type .emoji { font-size: 4rem; line-height: 1; }
+.type h2 { font-size: 2.2rem; color: var(--pink); }
+.type p { margin: .2em 0 0; font-family: var(--hand); font-size: 1.35rem; }
+.picks { display: flex; justify-content: center; gap: 6px; margin: .4em 0 1.2em; }
+.picks span { width: 2.3em; height: 2.3em; display: grid; place-items: center; border: 2px solid var(--ink);
+  border-radius: 10px; background: var(--card); font-size: 1.05rem; }
+.picks .none { color: #bbb; background: transparent; border-style: dashed; }
+.s-result h3 { font-size: 1.25rem; }
+.courses { list-style: none; padding: 0; margin: .5em 0 1.2em; display: grid; gap: 8px; }
+.courses li { background: var(--yellow); border: var(--line); border-radius: 12px; padding: .45em .8em; font-weight: 700; }
+.last { font-family: var(--display); font-size: 1.35rem; margin: 1em 0 .6em; }
+.four { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.four span { background: var(--bg2); border: 2px solid var(--ink); border-radius: 999px; padding: .15em .7em; font-size: .9rem; }
+
+/* ── 발표(프로젝터) ── */
+body.host { overflow: hidden; height: 100vh; font-size: clamp(16px, 1.45vw, 30px); }
+body.host main { height: 100vh; padding: 3.2vh 4vw; }
+.clock { position: fixed; top: 1.4vh; right: 1.6vw; font-family: var(--display); font-size: .9em;
+  background: var(--card); border: var(--line); border-radius: 999px; padding: .1em .8em; z-index: 10; }
+body.late .clock { background: var(--yellow); }
+body.late main { box-shadow: inset 0 0 0 10px var(--yellow); }
+
+.h-start { height: 100%; display: grid; grid-template-columns: 1.4fr 1fr; gap: 4vw; align-items: center; }
+.h-start h1 { font-size: 4.6em; line-height: 1.12; margin: .2em 0 .4em; }
+.h-start .sub { font-size: 1.3em; margin: 0 0 1em; }
+.h-start .count { font-family: var(--display); font-size: 1.5em; }
+.h-start .count b { color: var(--pink); font-weight: 400; font-size: 1.4em; }
+.qr { margin: 0; text-align: center; background: var(--card); border: var(--line); border-radius: var(--r);
+  box-shadow: var(--shadow); padding: 1.2em; }
+.qr img { width: 100%; max-width: 32vh; image-rendering: pixelated; }
+.qr figcaption { font-family: var(--display); font-size: .95em; word-break: break-all; }
+.qrbig { display: none; position: fixed; inset: 0; z-index: 40; background: rgba(255,227,238,.97);
+  place-items: center; align-content: center; text-align: center; }
+.qrbig img { width: 70vh; image-rendering: pixelated; border: var(--line); background: #fff; }
+.qrbig p { font-family: var(--display); font-size: 2em; margin: .4em 0 0; }
+body.bigqr .qrbig { display: grid; }
+
+.h-scene { height: 100%; display: flex; flex-direction: column; gap: 2.2vh; }
+.h-scene header { display: flex; align-items: center; gap: 1em; padding-right: 7em; }
+.h-scene header h2 { font-size: 2.4em; }
+.steps { margin-left: auto; display: flex; gap: .35em; }
+.steps i { width: .8em; height: .8em; border-radius: 50%; border: 2px solid var(--ink); background: var(--card); }
+.steps i.on { background: var(--pink); }
+.h-scene .prompt { font-size: 2em; line-height: 1.45; margin: 0; background: var(--card); border: var(--line);
+  border-radius: var(--r); box-shadow: var(--shadow); padding: .8em 1em; }
+.step-situation .prompt { font-size: 2.6em; margin-top: 6vh; }
+.step-card .prompt, .step-talk .prompt, .step-result .prompt { font-size: 1.35em; }
+.opts { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.4vh; }
+.opts li { position: relative; display: grid; grid-template-columns: 2.2em 1fr 4em; align-items: center; gap: .7em;
+  background: var(--card); border: var(--line); border-radius: 14px; padding: .55em .8em; font-size: 1.2em; overflow: hidden; }
+.opts li b { width: 1.9em; height: 1.9em; display: grid; place-items: center; border-radius: 50%; background: var(--bg);
+  border: 2px solid var(--ink); font-family: var(--display); z-index: 1; }
+.opts .txt { z-index: 1; }
+.opts .bar { position: absolute; inset: 0 auto 0 0; width: var(--w); background: var(--pink-soft); transition: width .8s cubic-bezier(.2,.8,.2,1); }
+.opts .num { z-index: 1; text-align: right; font-family: var(--display); font-size: 1.2em; }
+.live, .talk { font-family: var(--display); font-size: 1.6em; margin: 0; text-align: center; }
+.live b { color: var(--pink); font-size: 1.4em; font-weight: 400; }
+.live .muted { font-family: var(--hand); font-size: .7em; }
+.talk { font-size: 2.4em; color: var(--pink); }
+.step-card .opts { display: none; }
+.cards { display: flex; flex-wrap: wrap; gap: 2vw; justify-content: center; align-items: stretch; margin-top: 1vh; }
+.card { flex: 1 1 0; max-width: 46vw; background: var(--yellow); border: var(--line); border-radius: var(--r);
+  box-shadow: 8px 8px 0 var(--ink); padding: 1.2em 1.4em; animation: flip .7s var(--d) both cubic-bezier(.2,.8,.2,1); }
+.card .when { margin: 0; font-weight: 700; color: var(--muted); }
+.card h3 { font-size: 2.3em; margin: .15em 0 .3em; }
+.card p { font-size: 1.25em; margin: 0; }
+.cards .note { flex-basis: 100%; text-align: center; font-family: var(--hand); font-size: 1.5em; margin: .6em 0 0; }
+@keyframes flip { from { transform: perspective(800px) rotateY(90deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.vid { flex: 1; min-height: 0; display: grid; place-items: center; }
+.vid video { max-width: 100%; max-height: 100%; border: var(--line); border-radius: 12px; background: #000; }
+.novid { font-family: var(--display); font-size: 1.6em; background: var(--card); border: var(--line); border-radius: var(--r); padding: 1em 2em; }
+
+.h-end { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.h-end h1 { font-size: 3.4em; margin: .1em 0 .5em; }
+.dist { display: flex; gap: 4vw; align-items: flex-end; height: 42vh; }
+.dist .col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; width: 12vw; }
+.dist .v { width: 100%; height: var(--h); min-height: 2.2em; background: var(--pink); border: var(--line); border-radius: 12px 12px 0 0;
+  color: #fff; font-family: var(--display); font-size: 1.6em; padding-top: .2em; transition: height .8s; }
+.dist b { font-size: 3em; font-weight: 400; margin-top: .2em; }
+.dist .col > span:last-child { font-family: var(--display); font-size: 1.3em; }
+.h-end .last { font-size: 2.2em; margin-top: 1em; }
+.reset-hint { position: fixed; bottom: 3vh; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff;
+  padding: .5em 1.2em; border-radius: 999px; z-index: 60; }
