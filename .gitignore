@@ -3,3 +3,5 @@ media-local/
 database.rules.json
 .firebaserc
 .DS_Store
+media-host/
+.firebase/

@@ -5,8 +5,11 @@ import { STEPS, typeResult } from './logic.js';
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const STUDENT_URL = location.origin + location.pathname;
 
-/* 장면 2 영상: 공개 저장소에 넣지 않는다(학생 얼굴). 발표 노트북에서 파일을 한 번 고르면 IndexedDB에 두고 다시 쓴다.
-   로컬 서버로 띄웠다면 media-local/scene2.mp4를 먼저 찾는다 */
+/* 장면 2 영상: 공개 저장소에 넣지 않는다(학생 얼굴).
+   찾는 순서: ① Firebase Hosting의 /m/<발표 키>/scene2.mp4(키를 아는 발표 화면만 주소를 안다)
+   ② 로컬 서버의 media-local/scene2.mp4 ③ 전에 고른 파일(IndexedDB) ④ 파일 고르기(비상용).
+   서버 영상 올리기: media-host/m/<키>/scene2.mp4 에 두고 firebase deploy --only hosting */
+const MEDIA_HOST = 'https://chiron-7a37c.web.app';
 function media(mode, fn) {
   return new Promise((ok, bad) => {
     const o = indexedDB.open('jnue-teacher-day', 1);
@@ -28,7 +31,7 @@ const ORDER = [{ scene: 0, step: 'situation' },
   { scene: 'end', step: 'situation' }];
 const idxOf = st => Math.max(0, ORDER.findIndex(o => o.scene === st.scene && o.step === st.step));
 
-export function startHost(app, sync, { local }) {
+export function startHost(app, sync, { local, hostKey }) {
   document.body.classList.add('host');
   let i = 0, n = 0, tallies = {}, allVotes = {}, offTally = () => {};
 
@@ -111,11 +114,15 @@ export function startHost(app, sync, { local }) {
         show(videoURL = URL.createObjectURL(f));
         saveVideo(f).catch(err => console.warn('영상 기억 실패', err));
       });
-      if (videoURL) show(videoURL);
-      else loadVideo().then(b => {
-        if (b) return show(videoURL = URL.createObjectURL(b));
-        v.addEventListener('error', ask, { once: true }); v.src = 'media-local/scene2.mp4'; v.play().catch(() => {});
-      });
+      if (videoURL) return show(videoURL);
+      const urls = [`${MEDIA_HOST}/m/${encodeURIComponent(hostKey)}/scene2.mp4`, 'media-local/scene2.mp4'];
+      v.addEventListener('loadeddata', () => { videoURL ||= v.currentSrc; }, { once: true }); // 실제로 열린 주소를 기억
+      const next = () => {
+        const u = urls.shift();
+        if (u) { v.addEventListener('error', next, { once: true }); return show(u); }
+        loadVideo().then(b => b ? show(videoURL = URL.createObjectURL(b)) : ask());
+      };
+      next();
     }
   }
 

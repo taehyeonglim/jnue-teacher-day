@@ -21,5 +21,5 @@ sync.onConnection(ok => {
   net.textContent = hostKey ? '📶 연결 끊김 — 색지 카드를 들어 주세요' : '연결 중…';
 });
 
-if (hostKey) startHost(app, sync, { local });
+if (hostKey) startHost(app, sync, { local, hostKey });
 else startStudent(app, sync);
