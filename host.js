@@ -174,12 +174,12 @@ export function startHost(app, sync, { local, hostKey }) {
   big.innerHTML = `<img src="img/qr.png" alt=""><p>${esc(STUDENT_URL.replace(/^https?:\/\//, ''))}</p>`;
   document.body.append(big);
 
-  /* 시계: 13:20부터 마무리 알림 */
+  /* 시계: 13:50부터 마무리 알림(행사 13:00~14:00) */
   const clock = document.createElement('div'); clock.className = 'clock'; document.body.append(clock);
   const tickClock = () => {
     const d = new Date(), hm = d.getHours() * 60 + d.getMinutes();
     clock.textContent = d.toTimeString().slice(0, 5) + (local ? ' · local' : '');
-    document.body.classList.toggle('late', hm >= 13 * 60 + 20 && hm < 14 * 60);
+    document.body.classList.toggle('late', hm >= 13 * 60 + 50 && hm < 14 * 60 + 30);
   };
   tickClock(); setInterval(tickClock, 15000);
 
