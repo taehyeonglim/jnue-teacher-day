@@ -10,9 +10,10 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 export function startStudent(app, sync) {
   document.body.classList.add('student');
   let mine = loadMine();
-  let st = { scene: 0, step: 'situation' };
+  let st = null; // 서버 상태를 받기 전(새로고침 직후)에는 내 표를 지우지 않는다
 
   function render() {
+    if (!st) return wait();
     if (st.scene === 0) { mine = {}; saveMine(mine); return wait(); } // 시작 전이면 지난 리허설 표를 지운다
     if (st.scene === 'end') return result();
     scene(SCENES.find(s => s.id === st.scene));
@@ -87,7 +88,7 @@ export function startStudent(app, sync) {
   const allTypes = () => `<div class="four">${Object.values(TYPES).map(t => `<span>${t.emoji} ${esc(t.name)}</span>`).join('')}</div>`;
 
   sync.onState(s => {
-    const changed = s.scene !== st.scene || s.step !== st.step;
+    const changed = !st || s.scene !== st.scene || s.step !== st.step;
     st = s;
     if (changed) { render(); window.scrollTo(0, 0); }
   });
