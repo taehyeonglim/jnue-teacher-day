@@ -56,6 +56,33 @@
           ".validate": false
         }
       }
+    },
+    "lamp": {
+      "state": {
+        ".write": "newData.child('k').isString() && newData.child('k').val().beginsWith('HOST_KEY_HERE:') && newData.child('k').val() !== data.child('k').val()",
+        "qh": {
+          ".read": true,
+          "$q": {
+            ".validate": "newData.val() === true"
+          }
+        }
+      },
+      "questions": {
+        ".read": true,
+        "$q": {
+          ".write": "!data.exists()",
+          ".validate": "newData.hasChildren(['t', 'at']) && newData.child('t').isString() && newData.child('t').val().length >= 1 && newData.child('t').val().length <= 120 && newData.child('at').val() === now",
+          "t": {
+            ".validate": true
+          },
+          "at": {
+            ".validate": true
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
     }
   }
 }
