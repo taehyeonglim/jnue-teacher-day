@@ -25,10 +25,16 @@ with sync_playwright() as p:
     host.wait_for_timeout(500)
     host.screenshot(path=str(out / "h00_start.png")); studs[0].screenshot(path=str(out / "s00_wait.png"))
 
+    host.keyboard.press("ArrowRight"); host.wait_for_timeout(2500)  # 학과 소개(홈페이지)
+    host.screenshot(path=str(out / "h01_intro.png")); studs[0].screenshot(path=str(out / "s01_intro.png"))
+    host.click(".intro-next"); host.wait_for_timeout(300)  # 소개 끝 → 장면 1 상황(아래 루프의 첫 →는 건너뜀)
+
     picks = ["ABCDBCA", "BBCCADD", "CBACDBA"]  # 학생별 장면 1~7 선택
     for sid in range(1, 8):
         for step in ["situation", "vote", "result", "talk", "card"]:
-            host.keyboard.press("ArrowRight"); host.wait_for_timeout(250)
+            if not (sid == 1 and step == "situation"):
+                host.keyboard.press("ArrowRight")
+            host.wait_for_timeout(250)
             if step == "vote":
                 for i, s in enumerate(studs):
                     if not (sid == 4 and i == 2):  # 학생 3은 장면 4를 건너뜀

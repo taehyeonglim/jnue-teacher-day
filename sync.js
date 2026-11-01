@@ -3,7 +3,7 @@
              nicks:{익명ID:'별명'}, hidden:{익명ID:true},
              questions:{질문ID:{t:'질문', at:시각}}, qhidden:{질문ID:true} }
    (Firebase에서는 hidden이 state/h, qhidden이 state/qh)
-   scene: 0 = 시작 화면, 1~7 = 장면, 'end' = 결과, 'qa' = 2부 진로 Q&A */
+   scene: 0 = 시작 화면, 'intro' = 학과 소개(LAMP 홈페이지), 1~7 = 장면, 'end' = 결과, 'qa' = 2부 진로 Q&A */
 import { tally, KEYS } from './logic.js';
 
 const ID_KEY = 'jnue-teacher-day.cid';
@@ -117,7 +117,7 @@ export const encState = s => `${s.scene}:${s.step}`;
 export function decState(v) {
   if (!v) return { scene: 0, step: 'situation' };
   const [a, step] = v.split(':');
-  return { scene: a === 'end' || a === 'qa' ? a : Number(a), step };
+  return { scene: ['end', 'qa', 'intro'].includes(a) ? a : Number(a), step };
 }
 
 const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';

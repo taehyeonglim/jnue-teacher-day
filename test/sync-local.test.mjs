@@ -140,3 +140,7 @@ test('호스트가 아니면 질문 숨기기 불가', async () => {
   await assert.rejects(() => a.hideQuestion('x'));
   all.forEach(s => s.close());
 });
+
+test('학과 소개(intro) 상태 인코딩', () => {
+  assert.deepEqual(decState(encState({ scene: 'intro', step: 'situation' })), { scene: 'intro', step: 'situation' });
+});

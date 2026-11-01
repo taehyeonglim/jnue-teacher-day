@@ -1,5 +1,5 @@
 /* 학생 화면(휴대폰) — 지금 장면의 선택지 4개, 마지막에 내 교사 유형 */
-import { SCENES, TYPES } from './scenes.js';
+import { SCENES, TYPES, INTRO_URL } from './scenes.js';
 import { typeResult } from './logic.js';
 
 const MINE = 'jnue-teacher-day.mine';
@@ -21,6 +21,7 @@ export function startStudent(app, sync) {
     if (st.scene === 0) { mine = {}; saveMine(mine); return wait(); } // 시작 전이면 지난 리허설 표를 지운다
     if (st.scene === 'end') return result();
     if (st.scene === 'qa') return qa();
+    if (st.scene === 'intro') return intro();
     scene(SCENES.find(s => s.id === st.scene));
   }
 
@@ -106,6 +107,17 @@ export function startStudent(app, sync) {
         <p class="muted qhint">💬 궁금한 건 오른쪽 아래 '질문' 버튼으로! 2부(14:00)에서 답해요</p>
       </section>`;
   }
+  /* ── 학과 소개: 앞 화면과 같은 홈페이지를 휴대폰으로 ── */
+  function intro() {
+    app.innerHTML = `
+      <section class="s-wait">
+        <p class="kicker">1부 · 초등교육과 소개</p>
+        <h1>초등교육과는<br><em>무엇을 배울까?</em></h1>
+        <p class="muted">앞 화면을 함께 봐 주세요. 소개가 끝나면 교실 딜레마가 시작돼요.</p>
+        <a class="ok" href="${INTRO_URL}" target="_blank" rel="noopener">📱 휴대폰으로 같이 보기</a>
+      </section>`;
+  }
+
   /* ── 2부: 진로 Q&A ── */
   function qa() {
     app.innerHTML = `

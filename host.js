@@ -1,5 +1,5 @@
 /* 발표 화면(프로젝터) — →/Space 다음 단계, ← 이전, 1~7 장면 처음, Q QR 크게, R 처음으로 */
-import { SCENES, TYPES } from './scenes.js';
+import { SCENES, TYPES, INTRO_URL } from './scenes.js';
 import { STEPS, typeResult } from './logic.js';
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -25,14 +25,15 @@ const loadVideo = () => media('readonly', st => st.get('scene2')).catch(() => nu
 const saveVideo = blob => media('readwrite', st => st.put(blob, 'scene2'));
 let videoURL = null;
 
-/* 진행 순서: 시작 → 장면마다 5단계 → 결과(1부 끝) → 2부 진로 Q&A */
-const ORDER = [{ scene: 0, step: 'situation' },
+/* 진행 순서: 시작 → 학과 소개(LAMP 홈페이지) → 장면마다 5단계 → 결과(1부 끝) → 2부 진로 Q&A */
+const ORDER = [{ scene: 0, step: 'situation' }, { scene: 'intro', step: 'situation' },
   ...SCENES.flatMap(s => STEPS.map(step => ({ scene: s.id, step }))),
   { scene: 'end', step: 'situation' }, { scene: 'qa', step: 'situation' }];
 
 /* 2부 이야기 순서(화면 위 칩). 자세한 내용은 건 폴더 2부_진행안.md */
 const TALK = ['① 심화과정 고르기', '② 1~4학년, 이렇게 준비해요', '③ 임용과 첫 발령', '④ 교사, 그다음의 길'];
 const ANSWERED = 'jnue-teacher-day.answered';
+
 const idxOf = st => Math.max(0, ORDER.findIndex(o => o.scene === st.scene && o.step === st.step));
 
 export function startHost(app, sync, { local, hostKey }) {
@@ -45,6 +46,7 @@ export function startHost(app, sync, { local, hostKey }) {
     if (o.scene === 0) return start();
     if (o.scene === 'end') return end();
     if (o.scene === 'qa') return qa();
+    if (o.scene === 'intro') return intro();
     scene(SCENES.find(s => s.id === o.scene), o.step);
   }
 
@@ -150,6 +152,26 @@ export function startHost(app, sync, { local, hostKey }) {
       </section>`;
   }
 
+  /* 학과 소개: 홈페이지를 화면 가득. 클리커(→)는 홈페이지가 받고, Esc 또는 오른쪽 아래 버튼으로 퀴즈 시작 */
+  function intro() {
+    app.innerHTML = `
+      <section class="h-intro">
+        <iframe src="${INTRO_URL}" title="초등교육과 소개" allow="autoplay; fullscreen"></iframe>
+        <button class="intro-next" type="button">교실 딜레마 시작 ▶ <small>Esc</small></button>
+      </section>`;
+    const f = app.querySelector('iframe');
+    app.querySelector('.intro-next').addEventListener('click', () => go(i + 1));
+    f.addEventListener('load', () => {
+      f.focus();
+      try { // 같은 출처(github.io)면 홈페이지 안에서 누른 Esc·R·Q도 발표 화면이 받는다
+        f.contentDocument.addEventListener('keydown', e => {
+          if (e.key === 'Escape') { e.preventDefault(); go(i + 1); }
+          else if (e.key === 'q' || e.key === 'Q') document.body.classList.toggle('bigqr');
+        });
+      } catch { /* 다른 출처(로컬 리허설)면 버튼으로 */ }
+    });
+  }
+
   /* 2부: 진로 이야기 순서 + 익명 질문판. 카드를 누르면 크게, '답했어요'는 이 노트북에만 기억 */
   let questions = [], spot = null;
   const answered = new Set(JSON.parse(localStorage.getItem(ANSWERED) || '[]'));
@@ -199,6 +221,12 @@ export function startHost(app, sync, { local, hostKey }) {
 
   addEventListener('keydown', e => {
     if (spot) { if (e.key === 'Escape') { spot.remove(); spot = null; } return; } // 질문을 크게 띄운 동안은 넘기지 않음
+    if (ORDER[i].scene === 'intro') { // 학과 소개 중: 이동 키는 홈페이지로 돌려보내고, Esc만 다음으로
+      if (e.key === 'Escape') { e.preventDefault(); go(i + 1); return; }
+      if (['ArrowRight', ' ', 'PageDown', 'Enter', 'ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) {
+        e.preventDefault(); app.querySelector('iframe')?.focus(); return;
+      }
+    }
     if (e.target.closest('video') && e.key === ' ') return;
     if (['ArrowRight', ' ', 'PageDown', 'Enter'].includes(e.key)) { e.preventDefault(); go(i + 1); }
     else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); go(i - 1); }
