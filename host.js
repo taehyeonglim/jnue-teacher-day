@@ -5,6 +5,23 @@ import { STEPS, typeResult } from './logic.js';
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const STUDENT_URL = location.origin + location.pathname;
 
+/* 장면 2 영상: 공개 저장소에 넣지 않는다(학생 얼굴). 발표 노트북에서 파일을 한 번 고르면 IndexedDB에 두고 다시 쓴다.
+   로컬 서버로 띄웠다면 media-local/scene2.mp4를 먼저 찾는다 */
+function media(mode, fn) {
+  return new Promise((ok, bad) => {
+    const o = indexedDB.open('jnue-teacher-day', 1);
+    o.onupgradeneeded = () => o.result.createObjectStore('media');
+    o.onerror = () => bad(o.error);
+    o.onsuccess = () => {
+      const tx = o.result.transaction('media', mode), r = fn(tx.objectStore('media'));
+      tx.oncomplete = () => ok(r.result); tx.onerror = () => bad(tx.error);
+    };
+  });
+}
+const loadVideo = () => media('readonly', st => st.get('scene2')).catch(() => null);
+const saveVideo = blob => media('readwrite', st => st.put(blob, 'scene2'));
+let videoURL = null;
+
 /* 진행 순서: 시작 → 장면마다 5단계 → 결과 */
 const ORDER = [{ scene: 0, step: 'situation' },
   ...SCENES.flatMap(s => STEPS.map(step => ({ scene: s.id, step }))),
@@ -64,8 +81,10 @@ export function startHost(app, sync, { local }) {
       <section class="h-scene step-${step}">
         <header><span class="badge">${s.id} / 7 · ${esc(s.time)}</span><h2>${esc(s.title)}</h2>
           <span class="steps">${STEPS.map(x => `<i class="${x === step ? 'on' : ''}"></i>`).join('')}</span></header>
-        ${video ? `<div class="vid"><video src="media-local/scene2.mp4" controls playsinline></video>
-            <p class="novid" hidden>영상 파일 없음 — media-local/scene2.mp4 를 넣어 주세요</p></div>`
+        ${video ? `<div class="vid"><video controls playsinline></video>
+            <div class="novid" hidden><p>🎬 이 노트북에서 장면 2 영상을 골라 주세요</p>
+              <label class="pick">영상 파일 고르기<input type="file" accept="video/*" hidden></label>
+              <small>드라이브 건 폴더 자료/장면2_이유빈/scene2.mp4 · 한 번 고르면 이 브라우저가 기억합니다</small></div></div>`
           : `<p class="prompt">${esc(s.prompt)}</p>`}
         ${step === 'situation' ? '' : `
         <ol class="opts">${s.choices.map(c => {
@@ -83,8 +102,20 @@ export function startHost(app, sync, { local }) {
       </section>`;
     const v = app.querySelector('video');
     if (v) {
-      v.addEventListener('error', () => { v.hidden = true; app.querySelector('.novid').hidden = false; });
-      v.play().catch(() => {});
+      const box = app.querySelector('.novid');
+      const show = url => { v.hidden = false; box.hidden = true; v.src = url; v.play().catch(() => {}); };
+      const ask = () => { v.hidden = true; box.hidden = false; };
+      box.querySelector('input').addEventListener('change', async e => {
+        const f = e.target.files[0]; if (!f) return;
+        if (videoURL) URL.revokeObjectURL(videoURL);
+        show(videoURL = URL.createObjectURL(f));
+        saveVideo(f).catch(err => console.warn('영상 기억 실패', err));
+      });
+      if (videoURL) show(videoURL);
+      else loadVideo().then(b => {
+        if (b) return show(videoURL = URL.createObjectURL(b));
+        v.addEventListener('error', ask, { once: true }); v.src = 'media-local/scene2.mp4'; v.play().catch(() => {});
+      });
     }
   }
 
