@@ -38,7 +38,7 @@ em { font-style: normal; color: var(--pink); }
   text-align: center; padding: .5em; font-weight: 700; }
 
 /* ── 학생(휴대폰) ── */
-body.student main { max-width: 520px; margin: 0 auto; padding: 20px 16px 48px; }
+body.student main { max-width: 520px; margin: 0 auto; padding: 20px 16px 96px; }
 .s-wait { text-align: center; padding-top: 18vh; }
 .s-wait h1 { font-size: 2.6rem; line-height: 1.2; margin: .3em 0 .6em; }
 .s-wait .ok { display: inline-block; background: var(--green); border: var(--line); box-shadow: var(--shadow);
@@ -172,3 +172,47 @@ body.bigqr .qrbig { display: grid; }
 .h-end .last { font-size: 2.2em; margin-top: 1em; }
 .reset-hint { position: fixed; bottom: 3vh; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff;
   padding: .5em 1.2em; border-radius: 999px; z-index: 60; }
+
+/* ── 질문함 ── */
+.fab { position: fixed; right: 16px; bottom: 16px; z-index: 30; font-family: var(--display); font-size: 1.05rem; color: var(--ink);
+  background: var(--yellow); border: var(--line); border-radius: 999px; box-shadow: 3px 3px 0 var(--ink); padding: .45em 1em; cursor: pointer; }
+body.host .fab { display: none; }
+.qsheet { position: fixed; inset: 0; z-index: 40; background: rgba(29,29,31,.45); display: grid; align-items: end; }
+.qsheet .box { background: var(--bg2); border-top: var(--line); border-radius: 22px 22px 0 0; padding: 18px 16px 28px; }
+.ask { display: grid; gap: 10px; margin: .6em 0; }
+.ask textarea { font: inherit; font-size: 1.05rem; padding: .6em .7em; border: var(--line); border-radius: 14px; resize: none; background: var(--card); }
+.ask button { font-family: var(--display); font-size: 1.2rem; color: var(--ink); background: var(--sky); border: var(--line);
+  border-radius: var(--r); box-shadow: var(--shadow); padding: .35em; cursor: pointer; }
+.ask .err { margin: 0; color: var(--pink); font-weight: 700; }
+.toast { position: fixed; left: 50%; bottom: 80px; transform: translateX(-50%); z-index: 50; background: var(--ink); color: #fff;
+  padding: .6em 1.1em; border-radius: 999px; font-weight: 700; white-space: nowrap; }
+.s-qa { padding-top: 4vh; }
+.s-qa h2 { font-size: 2rem; margin: .2em 0 .4em; }
+.qhint { margin-top: 1.2em; }
+.qnext { font-family: var(--hand); font-size: 1.6em; margin: .4em 0 0; }
+
+/* 발표: 2부 */
+.h-qa { height: 100%; display: flex; flex-direction: column; gap: 1.6vh; position: relative; }
+.h-qa header { display: flex; align-items: center; gap: 1em; padding-right: 7em; }
+.h-qa header h2 { font-size: 2.3em; }
+.talk-steps { list-style: none; margin: 0; padding: 0; display: flex; gap: .6em; flex-wrap: wrap; }
+.talk-steps li { font-family: var(--display); font-size: 1.15em; background: var(--card); border: var(--line); border-radius: 999px; padding: .2em .9em; }
+.qcount { font-family: var(--display); font-size: 1.4em; margin: 0; }
+.qcount b { color: var(--pink); font-weight: 400; }
+.qcards { flex: 1; min-height: 0; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(22em, 1fr)); gap: 1.2vh 1.2vw;
+  align-content: start; padding: 4px 8px 8px 4px; margin-right: 13vw; }
+.qcard { text-align: left; font: inherit; font-size: 1.1em; color: var(--ink); background: var(--card); border: var(--line); border-radius: 14px;
+  box-shadow: 4px 4px 0 var(--ink); padding: .6em .8em; cursor: pointer; animation: pop .45s cubic-bezier(.2,1.6,.4,1) both; }
+.qcard .no { display: inline-block; font-family: var(--display); color: var(--pink); margin-right: .5em; }
+.qcard.done { opacity: .45; }
+.qr-mini { position: absolute; right: 0; bottom: 0; margin: 0; width: 12vw; text-align: center; background: var(--card); border: var(--line);
+  border-radius: 14px; padding: .5em; }
+.qr-mini img { width: 100%; image-rendering: pixelated; }
+.qr-mini figcaption { font-family: var(--display); font-size: .8em; }
+.spot { position: fixed; inset: 0; z-index: 45; background: rgba(29,29,31,.55); display: grid; place-items: center; }
+.spot .box { width: min(80vw, 1400px); background: var(--card); border: var(--line); border-radius: 26px; box-shadow: 10px 10px 0 var(--ink); padding: 1.4em 2em; }
+.spot .no { font-family: var(--display); color: var(--pink); font-size: 1.6em; margin: 0; }
+.spot .qt { font-family: var(--display); font-size: 2.8em; line-height: 1.35; margin: .2em 0 .6em; }
+.spot .acts { display: flex; gap: .8em; }
+.spot .acts button { font-family: var(--display); font-size: 1.1em; border: var(--line); border-radius: 999px; padding: .25em 1.1em; cursor: pointer; background: var(--bg2); }
+.spot .acts .ok { background: var(--green); }

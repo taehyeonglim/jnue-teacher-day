@@ -12,13 +12,15 @@ export function startStudent(app, sync) {
   document.body.classList.add('student');
   let mine = loadMine();
   let st = null; // 서버 상태를 받기 전(새로고침 직후)에는 내 표를 지우지 않는다
-  let nick = localStorage.getItem(NICK);
+  let nick = localStorage.getItem(NICK), fab = null;
   if (nick) sync.setNick(nick); // 서버 쪽 별명이 지워졌어도 다시 올린다
 
   function render() {
+    if (fab) fab.hidden = st?.scene === 'qa'; // 2부 화면에는 질문 칸이 이미 있음
     if (!st) return wait();
     if (st.scene === 0) { mine = {}; saveMine(mine); return wait(); } // 시작 전이면 지난 리허설 표를 지운다
     if (st.scene === 'end') return result();
+    if (st.scene === 'qa') return qa();
     scene(SCENES.find(s => s.id === st.scene));
   }
 
@@ -101,8 +103,60 @@ export function startStudent(app, sync) {
         <ul class="courses">${[...new Set(ts.flatMap(t => t.courses))].map(c => `<li>${esc(c)}</li>`).join('')}</ul>
         <p class="last">초등과는 이 <b>네 가지 눈</b>을 모두 배웁니다.</p>
         ${allTypes()}
+        <p class="muted qhint">💬 궁금한 건 오른쪽 아래 '질문' 버튼으로! 2부(14:00)에서 답해요</p>
       </section>`;
   }
+  /* ── 2부: 진로 Q&A ── */
+  function qa() {
+    app.innerHTML = `
+      <section class="s-qa">
+        <p class="kicker">2부 · 진로 Q&A</p>
+        <h2>초등교사, <em>그다음은?</em></h2>
+        <p class="muted">궁금한 것을 익명으로 보내 주세요. 앞 화면에 뜨면 학과장이 답합니다.</p>
+        ${askForm()}
+        <button type="button" class="link" id="mytype">내 교사 유형 다시 보기</button>
+      </section>`;
+    bindAsk(app.querySelector('.ask'));
+    app.querySelector('#mytype').addEventListener('click', result);
+  }
+
+  /* 질문 보내기 칸(2부 화면·질문 버튼 공용) */
+  const askForm = () => `
+    <form class="ask">
+      <textarea maxlength="120" rows="3" placeholder="예) 심화과정은 나중에 바꿀 수 있나요?"></textarea>
+      <button>💬 질문 보내기</button>
+      <p class="err" hidden>1~120자로 적어 주세요</p>
+    </form>`;
+  function bindAsk(f, done) {
+    f.addEventListener('submit', async e => {
+      e.preventDefault();
+      const ta = f.querySelector('textarea');
+      if (await sync.ask(ta.value)) { ta.value = ''; f.querySelector('.err').hidden = true; toast('질문을 보냈어요! 2부에서 답해 드릴게요'); done?.(); }
+      else f.querySelector('.err').hidden = false;
+    });
+  }
+  function toast(msg) {
+    const d = document.createElement('div'); d.className = 'toast'; d.textContent = msg; document.body.append(d);
+    setTimeout(() => d.remove(), 2600);
+  }
+
+  /* 어느 화면에서나 오른쪽 아래 '질문' 버튼 */
+  fab = document.createElement('button');
+  fab.className = 'fab'; fab.type = 'button'; fab.textContent = '💬 질문';
+  fab.addEventListener('click', () => {
+    if (document.querySelector('.qsheet')) return;
+    const sh = document.createElement('div'); sh.className = 'qsheet';
+    sh.innerHTML = `<div class="box"><p class="kicker">익명 질문 · 2부(14:00)에서 답해요</p>${askForm()}
+      <button type="button" class="link close">닫기</button></div>`;
+    document.body.append(sh);
+    const close = () => sh.remove();
+    sh.querySelector('.close').addEventListener('click', close);
+    sh.addEventListener('click', e => { if (e.target === sh) close(); });
+    bindAsk(sh.querySelector('.ask'), close);
+    sh.querySelector('textarea').focus();
+  });
+  document.body.append(fab);
+
   const allTypes = () => `<div class="four">${Object.values(TYPES).map(t => `<span>${t.emoji} ${esc(t.name)}</span>`).join('')}</div>`;
 
   sync.onState(s => {

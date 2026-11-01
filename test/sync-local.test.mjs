@@ -106,3 +106,37 @@ test('호스트가 아니면 숨기기 불가', async () => {
   await assert.rejects(() => a.hide('b'));
   all.forEach(s => s.close());
 });
+
+import { cleanQuestion } from '../sync.js';
+test('질문 다듬기: 앞뒤 공백 제거, 1~120자', () => {
+  assert.equal(cleanQuestion('  임용은 언제 준비해요? '), '임용은 언제 준비해요?');
+  assert.equal(cleanQuestion('가'.repeat(120)), '가'.repeat(120));
+  assert.equal(cleanQuestion('가'.repeat(121)), null);
+  assert.equal(cleanQuestion('  '), null);
+  assert.equal(cleanQuestion(null), null);
+});
+
+test('2부 상태 인코딩', () => {
+  assert.deepEqual(decState(encState({ scene: 'qa', step: 'situation' })), { scene: 'qa', step: 'situation' });
+});
+
+test('질문함: 보낸 순서대로, 숨긴 질문은 빼고', async () => {
+  const { host, a, b, all } = pair();
+  let qs;
+  host.onQuestions(x => { qs = x; });
+  assert.equal(await a.ask(' 임용 준비는 언제부터? '), true);
+  assert.equal(await b.ask(''), false);
+  await b.ask('심화과정은 바꿀 수 있나요?');
+  await tick();
+  assert.deepEqual(qs.map(q => q.text), ['임용 준비는 언제부터?', '심화과정은 바꿀 수 있나요?']);
+  await host.hideQuestion(qs[0].id);
+  await tick();
+  assert.deepEqual(qs.map(q => q.text), ['심화과정은 바꿀 수 있나요?']);
+  all.forEach(s => s.close());
+});
+
+test('호스트가 아니면 질문 숨기기 불가', async () => {
+  const { a, all } = pair();
+  await assert.rejects(() => a.hideQuestion('x'));
+  all.forEach(s => s.close());
+});

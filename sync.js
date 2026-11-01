@@ -1,7 +1,9 @@
 /* 공유 상태 — Firebase RTDB 또는 local(같은 컴퓨터 탭끼리, 리허설·오프라인용)
    DB 모양: { state:{scene, step}, votes:{장면:{익명ID:'A'..'D'}}, presence:{익명ID:true},
-             nicks:{익명ID:'별명'}, hidden:{익명ID:true} }  (Firebase에서는 hidden이 state/h)
-   scene: 0 = 시작 화면, 1~7 = 장면, 'end' = 결과 */
+             nicks:{익명ID:'별명'}, hidden:{익명ID:true},
+             questions:{질문ID:{t:'질문', at:시각}}, qhidden:{질문ID:true} }
+   (Firebase에서는 hidden이 state/h, qhidden이 state/qh)
+   scene: 0 = 시작 화면, 1~7 = 장면, 'end' = 결과, 'qa' = 2부 진로 Q&A */
 import { tally, KEYS } from './logic.js';
 
 const ID_KEY = 'jnue-teacher-day.cid';
@@ -23,6 +25,19 @@ export function cleanNick(x) {
   const t = x.trim();
   return t.length >= 1 && t.length <= 8 ? t : null;
 }
+
+/* 질문함: 앞뒤 공백을 떼고 1~120자만(익명) */
+export function cleanQuestion(x) {
+  if (typeof x !== 'string') return null;
+  const t = x.trim();
+  return t.length >= 1 && t.length <= 120 ? t : null;
+}
+
+/* 보낸 순서대로, 숨긴 질문은 빼고 */
+const questionList = (qs, hidden) => Object.entries(qs || {})
+  .filter(([id, q]) => !hidden?.[id] && q && typeof q.t === 'string')
+  .map(([id, q]) => ({ id, text: q.t, at: q.at || 0 }))
+  .sort((x, y) => x.at - y.at || (x.id < y.id ? -1 : 1));
 
 /* 호스트가 쓸 때마다 새로 만드는 표식. 규칙은 '키로 시작하고 직전 값과 다를 것'을 요구하므로
    키를 모르는 사람이 state의 일부만 덮어써도(기존 k가 남아) 거부된다 */
@@ -47,7 +62,7 @@ function localSync({ hostKey, store = lsStore(), channel = 'jnue-teacher-day', i
   const DB = 'jnue-teacher-day.localdb';
   const bc = new BroadcastChannel(channel);
   const subs = new Set();
-  const read = () => ({ nicks: {}, hidden: {},
+  const read = () => ({ nicks: {}, hidden: {}, questions: {}, qhidden: {},
     ...JSON.parse(store.get(DB) || '{"state":{"scene":0,"step":"situation"},"votes":{},"presence":{}}') });
   const notify = () => subs.forEach(f => f(read()));
   const write = fn => { const db = read(); fn(db); store.set(DB, JSON.stringify(db)); bc.postMessage(1); notify(); };
@@ -79,6 +94,16 @@ function localSync({ hostKey, store = lsStore(), channel = 'jnue-teacher-day', i
       if (!hostKey) throw new Error('호스트만 숨길 수 있습니다');
       write(db => { db.hidden[cid] = true; });
     },
+    async ask(text) {
+      const t = cleanQuestion(text); if (!t) return false;
+      const at = Date.now();
+      write(db => { db.questions[`${id}-${at}-${Math.random().toString(36).slice(2, 6)}`] = { t, at }; }); return true;
+    },
+    onQuestions: cb => on(db => cb(questionList(db.questions, db.qhidden))),
+    async hideQuestion(qid) {
+      if (!hostKey) throw new Error('호스트만 숨길 수 있습니다');
+      write(db => { db.qhidden[qid] = true; });
+    },
     onConnection: cb => { cb(true); return () => {}; },
     async reset() { write(db => { db.votes = {}; db.state = { scene: 0, step: 'situation' }; }); },
     close() { if (!hostKey) write(db => { delete db.presence[id]; }); bc.close(); subs.clear(); },
@@ -92,7 +117,7 @@ export const encState = s => `${s.scene}:${s.step}`;
 export function decState(v) {
   if (!v) return { scene: 0, step: 'situation' };
   const [a, step] = v.split(':');
-  return { scene: a === 'end' ? 'end' : Number(a), step };
+  return { scene: a === 'end' || a === 'qa' ? a : Number(a), step };
 }
 
 const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
@@ -146,6 +171,23 @@ function firebaseSync({ config, hostKey, id = myId() }) {
         .map(([k, path]) => d.onValue(d.ref(db, path), s => { cur[k] = s.val() || {}; emit(); }));
       return () => offs.forEach(f => f());
     }),
+    async ask(text) {
+      const t = cleanQuestion(text); if (!t) return false;
+      const { d, db } = await ready;
+      try { await d.push(d.ref(db, 'questions'), { t, at: d.serverTimestamp() }); return true; } catch { return false; }
+    },
+    onQuestions: later(({ d, db }, cb) => {
+      const cur = { q: {}, h: {} };
+      const emit = () => cb(questionList(cur.q, cur.h));
+      const offs = [['q', 'questions'], ['h', 'state/qh']]
+        .map(([k, path]) => d.onValue(d.ref(db, path), s => { cur[k] = s.val() || {}; emit(); }));
+      return () => offs.forEach(f => f());
+    }),
+    async hideQuestion(qid) {
+      if (!hostKey) throw new Error('호스트만 숨길 수 있습니다');
+      const { d, db } = await ready;
+      await d.update(d.ref(db, 'state'), { ['qh/' + qid]: true, k: hostToken(hostKey) });
+    },
     async hide(cid) {
       if (!hostKey) throw new Error('호스트만 숨길 수 있습니다');
       const { d, db } = await ready;

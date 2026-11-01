@@ -25,10 +25,14 @@ const loadVideo = () => media('readonly', st => st.get('scene2')).catch(() => nu
 const saveVideo = blob => media('readwrite', st => st.put(blob, 'scene2'));
 let videoURL = null;
 
-/* 진행 순서: 시작 → 장면마다 5단계 → 결과 */
+/* 진행 순서: 시작 → 장면마다 5단계 → 결과(1부 끝) → 2부 진로 Q&A */
 const ORDER = [{ scene: 0, step: 'situation' },
   ...SCENES.flatMap(s => STEPS.map(step => ({ scene: s.id, step }))),
-  { scene: 'end', step: 'situation' }];
+  { scene: 'end', step: 'situation' }, { scene: 'qa', step: 'situation' }];
+
+/* 2부 이야기 순서(화면 위 칩). 자세한 내용은 건 폴더 2부_진행안.md */
+const TALK = ['① 심화과정 고르기', '② 1~4학년, 이렇게 준비해요', '③ 임용과 첫 발령', '④ 교사, 그다음의 길'];
+const ANSWERED = 'jnue-teacher-day.answered';
 const idxOf = st => Math.max(0, ORDER.findIndex(o => o.scene === st.scene && o.step === st.step));
 
 export function startHost(app, sync, { local, hostKey }) {
@@ -40,6 +44,7 @@ export function startHost(app, sync, { local, hostKey }) {
     const o = ORDER[i];
     if (o.scene === 0) return start();
     if (o.scene === 'end') return end();
+    if (o.scene === 'qa') return qa();
     scene(SCENES.find(s => s.id === o.scene), o.step);
   }
 
@@ -141,7 +146,44 @@ export function startHost(app, sync, { local, hostKey }) {
           <div class="col"><span class="v" style="--h:${dist[k] / max * 100}%">${dist[k]}</span>
             <b>${t.emoji}</b><span>${esc(t.name)}</span></div>`).join('')}</div>
         <p class="last">초등과는 이 <em>네 가지 눈</em>을 모두 배웁니다.</p>
+        <p class="qnext">💬 궁금한 건 휴대폰 '질문' 버튼으로 — 2부(14:00)에서 답합니다</p>
       </section>`;
+  }
+
+  /* 2부: 진로 이야기 순서 + 익명 질문판. 카드를 누르면 크게, '답했어요'는 이 노트북에만 기억 */
+  let questions = [], spot = null;
+  const answered = new Set(JSON.parse(localStorage.getItem(ANSWERED) || '[]'));
+  function qa() {
+    app.innerHTML = `
+      <section class="h-qa">
+        <header><span class="badge">2부 · 14:00~15:00</span><h2>초등교사, <em>그다음은?</em> 진로 Q&A</h2></header>
+        <ol class="talk-steps">${TALK.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
+        <p class="qcount">💬 받은 질문 <b id="qn">0</b>개 <span class="muted">· 카드를 누르면 크게 보여요</span></p>
+        <div class="qcards" id="qc"></div>
+        <figure class="qr-mini"><img src="img/qr.png" alt=""><figcaption>질문은 휴대폰으로</figcaption></figure>
+      </section>`;
+    drawQuestions();
+  }
+  function drawQuestions() {
+    const box = document.getElementById('qc'); if (!box) return;
+    document.getElementById('qn').textContent = questions.length;
+    box.innerHTML = questions.map((q, j) => `<button class="qcard ${answered.has(q.id) ? 'done' : ''}" data-j="${j}">
+      <span class="no">Q${j + 1}</span>${esc(q.text)}</button>`).join('') || '<p class="muted">아직 질문이 없어요</p>';
+    box.querySelectorAll('.qcard').forEach(b => b.addEventListener('click', () => openSpot(+b.dataset.j)));
+  }
+  function openSpot(j) {
+    const q = questions[j]; if (!q) return;
+    spot?.remove();
+    spot = document.createElement('div'); spot.className = 'spot';
+    spot.innerHTML = `<div class="box"><p class="no">Q${j + 1}</p><p class="qt">${esc(q.text)}</p>
+      <div class="acts"><button class="ok">✓ 답했어요</button><button class="hide">숨기기</button><button class="x">닫기 (Esc)</button></div></div>`;
+    document.body.append(spot);
+    const close = () => { spot?.remove(); spot = null; };
+    spot.querySelector('.ok').addEventListener('click', () => {
+      answered.add(q.id); localStorage.setItem(ANSWERED, JSON.stringify([...answered])); close(); drawQuestions();
+    });
+    spot.querySelector('.hide').addEventListener('click', () => { close(); sync.hideQuestion(q.id).catch(e => console.warn('숨기기 실패', e)); });
+    spot.querySelector('.x').addEventListener('click', close);
   }
 
   /* ── 진행 ── */
@@ -156,6 +198,7 @@ export function startHost(app, sync, { local, hostKey }) {
   }
 
   addEventListener('keydown', e => {
+    if (spot) { if (e.key === 'Escape') { spot.remove(); spot = null; } return; } // 질문을 크게 띄운 동안은 넘기지 않음
     if (e.target.closest('video') && e.key === ' ') return;
     if (['ArrowRight', ' ', 'PageDown', 'Enter'].includes(e.key)) { e.preventDefault(); go(i + 1); }
     else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); go(i - 1); }
@@ -174,17 +217,19 @@ export function startHost(app, sync, { local, hostKey }) {
   big.innerHTML = `<img src="img/qr.png" alt=""><p>${esc(STUDENT_URL.replace(/^https?:\/\//, ''))}</p>`;
   document.body.append(big);
 
-  /* 시계: 13:50부터 마무리 알림(행사 13:00~14:00) */
+  /* 시계: 1부 13:50, 2부 14:50부터 마무리 알림(1부 13:00~14:00, 2부 14:00~15:00) */
   const clock = document.createElement('div'); clock.className = 'clock'; document.body.append(clock);
   const tickClock = () => {
     const d = new Date(), hm = d.getHours() * 60 + d.getMinutes();
     clock.textContent = d.toTimeString().slice(0, 5) + (local ? ' · local' : '');
-    document.body.classList.toggle('late', hm >= 13 * 60 + 50 && hm < 14 * 60 + 30);
+    const part = ORDER[i]?.scene === 'qa' ? 15 * 60 : 14 * 60;
+    document.body.classList.toggle('late', hm >= part - 10 && hm < part + 30);
   };
   tickClock(); setInterval(tickClock, 15000);
 
   sync.onPresence(x => { n = x; const el = document.getElementById('n'); if (el) el.textContent = n; });
   sync.onRoster(r => { roster = r; drawBubbles(); });
+  sync.onQuestions(qs => { questions = qs; drawQuestions(); });
   sync.onAllVotes(v => { allVotes = v; if (ORDER[i].scene === 'end') end(); });
 
   /* 새로고침해도 이어서: 저장된 상태에서 시작 */
