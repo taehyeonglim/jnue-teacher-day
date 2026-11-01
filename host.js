@@ -31,9 +31,28 @@ export function startHost(app, sync, { local }) {
           <h1>오늘 하루,<br>내가 <em>담임선생님</em></h1>
           <p class="sub">여러분은 오늘 3월에 발령받은 초임 담임입니다.<br>하루 동안 일곱 번의 선택을 하게 됩니다.</p>
           <p class="count">📱 접속 <b id="n">${n}</b>명</p>
+          <div class="bubbles" id="bub"></div>
         </div>
         <figure class="qr"><img src="img/qr.png" alt="접속 QR"><figcaption>${esc(STUDENT_URL.replace(/^https?:\/\//, ''))}</figcaption></figure>
       </section>`;
+    drawBubbles();
+  }
+
+  /* 대기 화면 별명 말풍선: 새로 온 사람만 튀어나오게, 클릭하면 화면에서 숨김 */
+  let roster = [];
+  function drawBubbles() {
+    const box = document.getElementById('bub'); if (!box) return;
+    const have = new Map([...box.children].map(el => [el.dataset.id, el]));
+    for (const { id, nick } of roster) {
+      const el = have.get(id);
+      if (el) { if (el.textContent !== nick) el.textContent = nick; continue; }
+      const b = document.createElement('button');
+      b.className = 'bub'; b.dataset.id = id; b.textContent = nick; b.title = '클릭하면 화면에서 숨김';
+      b.addEventListener('click', () => { b.remove(); sync.hide(id).catch(e => console.warn('숨기기 실패', e)); });
+      box.append(b);
+    }
+    const ids = new Set(roster.map(r => r.id));
+    for (const [id, el] of have) if (!ids.has(id)) el.remove();
   }
 
   function scene(s, step) {
@@ -127,6 +146,7 @@ export function startHost(app, sync, { local }) {
   tickClock(); setInterval(tickClock, 15000);
 
   sync.onPresence(x => { n = x; const el = document.getElementById('n'); if (el) el.textContent = n; });
+  sync.onRoster(r => { roster = r; drawBubbles(); });
   sync.onAllVotes(v => { allVotes = v; if (ORDER[i].scene === 'end') end(); });
 
   /* 새로고침해도 이어서: 저장된 상태에서 시작 */

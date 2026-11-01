@@ -68,3 +68,41 @@ test('state 문자열 인코딩', () => {
     assert.deepEqual(decState(encState(s)), s);
   assert.deepEqual(decState(null), { scene: 0, step: 'situation' });
 });
+
+import { cleanNick, hostToken } from '../sync.js';
+test('별명 다듬기: 앞뒤 공백 제거, 8자 넘으면 거부', () => {
+  assert.equal(cleanNick('  하늘 '), '하늘');
+  assert.equal(cleanNick('가나다라마바사아'), '가나다라마바사아');
+  assert.equal(cleanNick('가나다라마바사아자'), null);
+  assert.equal(cleanNick('   '), null);
+  assert.equal(cleanNick(42), null);
+});
+
+test('호스트 토큰은 키로 시작하고 매번 다르다', () => {
+  const a = hostToken('k'), b = hostToken('k');
+  assert.ok(a.startsWith('k:') && b.startsWith('k:'));
+  assert.notEqual(a, b);
+});
+
+test('별명 명단: 접속한 사람의 별명만, 숨긴 사람은 빼고', async () => {
+  const { host, a, b, all } = pair();
+  let r;
+  host.onRoster(x => { r = x; });
+  assert.equal(await a.setNick(' 하늘 '), true);
+  assert.equal(await b.setNick('너무너무너무긴별명이야'), false);
+  await b.setNick('바다');
+  await tick();
+  assert.deepEqual(r, [{ id: 'a', nick: '하늘' }, { id: 'b', nick: '바다' }]);
+  await host.hide('b');
+  await tick();
+  assert.deepEqual(r, [{ id: 'a', nick: '하늘' }]);
+  a.close(); await tick();
+  assert.deepEqual(r, []);
+  host.close(); b.close(); // a는 위에서 닫음
+});
+
+test('호스트가 아니면 숨기기 불가', async () => {
+  const { a, all } = pair();
+  await assert.rejects(() => a.hide('b'));
+  all.forEach(s => s.close());
+});

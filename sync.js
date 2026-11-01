@@ -1,5 +1,6 @@
 /* 공유 상태 — Firebase RTDB 또는 local(같은 컴퓨터 탭끼리, 리허설·오프라인용)
-   DB 모양: { state:{scene, step}, votes:{장면:{익명ID:'A'..'D'}}, presence:{익명ID:true} }
+   DB 모양: { state:{scene, step}, votes:{장면:{익명ID:'A'..'D'}}, presence:{익명ID:true},
+             nicks:{익명ID:'별명'}, hidden:{익명ID:true} }  (Firebase에서는 hidden이 state/h)
    scene: 0 = 시작 화면, 1~7 = 장면, 'end' = 결과 */
 import { tally, KEYS } from './logic.js';
 
@@ -16,6 +17,21 @@ export function canVote(state, scene, choice) {
   return !!state && state.scene === scene && state.step === 'vote' && KEYS.includes(choice);
 }
 
+/* 별명: 앞뒤 공백을 떼고 1~8자만. 실명이 아니라 '오늘 불릴 별명'(공개 DB라서) */
+export function cleanNick(x) {
+  if (typeof x !== 'string') return null;
+  const t = x.trim();
+  return t.length >= 1 && t.length <= 8 ? t : null;
+}
+
+/* 호스트가 쓸 때마다 새로 만드는 표식. 규칙은 '키로 시작하고 직전 값과 다를 것'을 요구하므로
+   키를 모르는 사람이 state의 일부만 덮어써도(기존 k가 남아) 거부된다 */
+export const hostToken = key => `${key}:${Date.now().toString(36)}:${Math.random().toString(36).slice(2, 8)}`;
+
+/* 접속 중이고 별명이 있고 숨기지 않은 사람만 */
+const roster = (presence, nicks, hidden) => Object.entries(nicks || {})
+  .filter(([id]) => presence?.[id] && !hidden?.[id]).map(([id, nick]) => ({ id, nick }));
+
 export function createSync(opts) {
   return opts.backend === 'firebase' ? firebaseSync(opts) : localSync(opts);
 }
@@ -31,7 +47,8 @@ function localSync({ hostKey, store = lsStore(), channel = 'jnue-teacher-day', i
   const DB = 'jnue-teacher-day.localdb';
   const bc = new BroadcastChannel(channel);
   const subs = new Set();
-  const read = () => JSON.parse(store.get(DB) || '{"state":{"scene":0,"step":"situation"},"votes":{},"presence":{}}');
+  const read = () => ({ nicks: {}, hidden: {},
+    ...JSON.parse(store.get(DB) || '{"state":{"scene":0,"step":"situation"},"votes":{},"presence":{}}') });
   const notify = () => subs.forEach(f => f(read()));
   const write = fn => { const db = read(); fn(db); store.set(DB, JSON.stringify(db)); bc.postMessage(1); notify(); };
   bc.onmessage = notify;
@@ -53,6 +70,15 @@ function localSync({ hostKey, store = lsStore(), channel = 'jnue-teacher-day', i
     onTally: (scene, cb) => on(db => cb(tally(db.votes[scene]))),
     onAllVotes: cb => on(db => cb(db.votes)),
     onPresence: cb => on(db => cb(Object.keys(db.presence).length)),
+    async setNick(name) {
+      const n = cleanNick(name); if (!n) return false;
+      write(db => { db.nicks[id] = n; }); return true;
+    },
+    onRoster: cb => on(db => cb(roster(db.presence, db.nicks, db.hidden))),
+    async hide(cid) {
+      if (!hostKey) throw new Error('호스트만 숨길 수 있습니다');
+      write(db => { db.hidden[cid] = true; });
+    },
     onConnection: cb => { cb(true); return () => {}; },
     async reset() { write(db => { db.votes = {}; db.state = { scene: 0, step: 'situation' }; }); },
     close() { if (!hostKey) write(db => { delete db.presence[id]; }); bc.close(); subs.clear(); },
@@ -60,8 +86,8 @@ function localSync({ hostKey, store = lsStore(), channel = 'jnue-teacher-day', i
 }
 
 /* ── Firebase RTDB ──
-   state는 { v:'장면:단계', k:호스트키 }. 규칙상 v만 누구나 읽고 k는 읽을 수 없다(database.rules.example.json).
-   표 지우기는 규칙 밖(관리자)에서: firebase database:remove /votes */
+   state는 { v:'장면:단계', k:hostToken(키), h:{숨긴 익명ID:true} }. 규칙상 v·h만 누구나 읽고 k는 읽을 수 없다
+   (database.rules.example.json). 표·별명 지우기는 규칙 밖(관리자)에서: firebase database:remove /votes, /nicks */
 export const encState = s => `${s.scene}:${s.step}`;
 export function decState(v) {
   if (!v) return { scene: 0, step: 'situation' };
@@ -97,7 +123,7 @@ function firebaseSync({ config, hostKey, id = myId() }) {
     async setState(s) {
       if (!hostKey) throw new Error('호스트만 진행할 수 있습니다');
       const { d, db } = await ready;
-      await d.set(d.ref(db, 'state'), { v: encState(s), k: hostKey });
+      await d.update(d.ref(db, 'state'), { v: encState(s), k: hostToken(hostKey) });
     },
     async vote(scene, choice) {
       if (!canVote(state, scene, choice)) return false;
@@ -108,10 +134,27 @@ function firebaseSync({ config, hostKey, id = myId() }) {
     onTally: later(({ d, db }, scene, cb) => d.onValue(d.ref(db, 'votes/' + scene), s => cb(tally(s.val())))),
     onAllVotes: later(({ d, db }, cb) => d.onValue(d.ref(db, 'votes'), s => cb(s.val() || {}))),
     onPresence: later(({ d, db }, cb) => d.onValue(d.ref(db, 'presence'), s => cb(s.size))),
+    async setNick(name) {
+      const n = cleanNick(name); if (!n) return false;
+      const { d, db } = await ready;
+      try { await d.set(d.ref(db, 'nicks/' + id), n); return true; } catch { return false; }
+    },
+    onRoster: later(({ d, db }, cb) => {
+      const cur = { p: {}, n: {}, h: {} };
+      const emit = () => cb(roster(cur.p, cur.n, cur.h));
+      const offs = [['p', 'presence'], ['n', 'nicks'], ['h', 'state/h']]
+        .map(([k, path]) => d.onValue(d.ref(db, path), s => { cur[k] = s.val() || {}; emit(); }));
+      return () => offs.forEach(f => f());
+    }),
+    async hide(cid) {
+      if (!hostKey) throw new Error('호스트만 숨길 수 있습니다');
+      const { d, db } = await ready;
+      await d.update(d.ref(db, 'state'), { ['h/' + cid]: true, k: hostToken(hostKey) });
+    },
     onConnection: later(({ d, db }, cb) => d.onValue(d.ref(db, '.info/connected'), s => cb(!!s.val()))),
     async reset() {
       const { d, db } = await ready;
-      await d.set(d.ref(db, 'state'), { v: encState({ scene: 0, step: 'situation' }), k: hostKey });
+      await d.update(d.ref(db, 'state'), { v: encState({ scene: 0, step: 'situation' }), k: hostToken(hostKey) });
     },
     close() {},
   };

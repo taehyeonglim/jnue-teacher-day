@@ -3,6 +3,7 @@ import { SCENES, TYPES } from './scenes.js';
 import { typeResult } from './logic.js';
 
 const MINE = 'jnue-teacher-day.mine';
+const NICK = 'jnue-teacher-day.nick';
 const loadMine = () => JSON.parse(localStorage.getItem(MINE) || '{}');
 const saveMine = m => localStorage.setItem(MINE, JSON.stringify(m));
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -11,6 +12,8 @@ export function startStudent(app, sync) {
   document.body.classList.add('student');
   let mine = loadMine();
   let st = null; // 서버 상태를 받기 전(새로고침 직후)에는 내 표를 지우지 않는다
+  let nick = localStorage.getItem(NICK);
+  if (nick) sync.setNick(nick); // 서버 쪽 별명이 지워졌어도 다시 올린다
 
   function render() {
     if (!st) return wait();
@@ -19,15 +22,32 @@ export function startStudent(app, sync) {
     scene(SCENES.find(s => s.id === st.scene));
   }
 
-  /* ── 대기 ── */
+  /* ── 대기: 별명을 받으면 앞 화면에 뜬다(실명 말고 별명 — 공개 DB) ── */
   function wait() {
     app.innerHTML = `
       <section class="s-wait">
         <p class="kicker">2026 신입생 전공탐색 주간 · 초등교육과</p>
         <h1>오늘 하루,<br>내가 <em>담임선생님</em></h1>
+        ${nick ? `
         <p class="ok">✓ 접속 완료!</p>
-        <p class="muted">곧 시작합니다. 앞 화면을 봐 주세요.</p>
+        <p class="me">오늘의 별명 <b>${esc(nick)}</b> <button type="button" class="link" id="re">바꾸기</button></p>
+        <p class="muted">곧 시작합니다. 앞 화면을 봐 주세요.</p>` : `
+        <form class="nick">
+          <label for="nk">오늘 불릴 별명</label>
+          <input id="nk" maxlength="8" autocomplete="off" enterkeyhint="go" placeholder="8자 이내 · 실명 말고 별명!">
+          <button>입장</button>
+          <p class="err" hidden>1~8자로 적어 주세요</p>
+        </form>
+        <p class="muted">별명은 앞 화면에 떠요.</p>`}
       </section>`;
+    const f = app.querySelector('form.nick');
+    if (f) f.addEventListener('submit', async e => {
+      e.preventDefault();
+      const v = f.querySelector('input').value;
+      if (await sync.setNick(v)) { nick = v.trim(); localStorage.setItem(NICK, nick); if (!st || st.scene === 0) wait(); }
+      else f.querySelector('.err').hidden = false;
+    });
+    app.querySelector('#re')?.addEventListener('click', () => { nick = null; wait(); app.querySelector('#nk').focus(); });
   }
 
   /* ── 장면 ── */
