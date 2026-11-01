@@ -43,6 +43,15 @@ body.student main { max-width: 520px; margin: 0 auto; padding: 20px 16px 48px; }
 .s-wait h1 { font-size: 2.6rem; line-height: 1.2; margin: .3em 0 .6em; }
 .s-wait .ok { display: inline-block; background: var(--green); border: var(--line); box-shadow: var(--shadow);
   border-radius: var(--r); padding: .4em 1.2em; font-family: var(--display); font-size: 1.4rem; }
+/* 넓은 화면(PC)으로 들어오면 휴대폰 접속 QR을 보여 준다. 휴대폰에서는 숨김 */
+.s-qr { display: none; }
+@media (min-width: 760px) {
+  .s-wait { padding-top: 8vh; }
+  .s-qr { display: inline-block; margin: 1.6em 0 0; background: var(--card); border: var(--line);
+    border-radius: var(--r); box-shadow: var(--shadow); padding: 1em 1em .6em; }
+  .s-qr img { display: block; width: min(300px, 38vh); image-rendering: pixelated; }
+  .s-qr figcaption { font-family: var(--display); font-size: 1.15rem; margin-top: .4em; }
+}
 .s-scene h2 { font-size: 1.7rem; margin: .4em 0 .3em; }
 .s-scene .prompt { background: var(--card); border: var(--line); border-radius: var(--r); box-shadow: var(--shadow);
   padding: .9em 1em; font-size: 1.05rem; margin: 0 0 .8em; }

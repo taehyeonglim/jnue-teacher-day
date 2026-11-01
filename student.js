@@ -26,6 +26,8 @@ export function startStudent(app, sync) {
         <h1>오늘 하루,<br>내가 <em>담임선생님</em></h1>
         <p class="ok">✓ 접속 완료!</p>
         <p class="muted">곧 시작합니다. 앞 화면을 봐 주세요.</p>
+        <figure class="s-qr"><img src="img/qr.png" alt="휴대폰 접속 QR">
+          <figcaption>📱 휴대폰 카메라로 찍으면 바로 참여!</figcaption></figure>
       </section>`;
   }
 
