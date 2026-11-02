@@ -25,13 +25,11 @@ const loadVideo = () => media('readonly', st => st.get('scene2')).catch(() => nu
 const saveVideo = blob => media('readwrite', st => st.put(blob, 'scene2'));
 let videoURL = null;
 
-/* 진행 순서: 시작 → 학과 소개(LAMP 홈페이지) → 장면마다 5단계 → 결과(1부 끝) → 2부 진로 Q&A */
+/* 진행 순서: 시작 → 학과 소개(LAMP 홈페이지) → 장면마다 5단계 → 결과 → 마무리 Q&A(질문함). 13:00~14:00 한 시간 */
 const ORDER = [{ scene: 0, step: 'situation' }, { scene: 'intro', step: 'situation' },
   ...SCENES.flatMap(s => STEPS.map(step => ({ scene: s.id, step }))),
   { scene: 'end', step: 'situation' }, { scene: 'qa', step: 'situation' }];
 
-/* 2부 이야기 순서(화면 위 칩). 자세한 내용은 건 폴더 2부_진행안.md */
-const TALK = ['① 심화과정 고르기', '② 1~4학년, 이렇게 준비해요', '③ 임용과 첫 발령', '④ 교사, 그다음의 길'];
 const ANSWERED = 'jnue-teacher-day.answered';
 
 const idxOf = st => Math.max(0, ORDER.findIndex(o => o.scene === st.scene && o.step === st.step));
@@ -148,7 +146,7 @@ export function startHost(app, sync, { local, hostKey }) {
           <div class="col"><span class="v" style="--h:${dist[k] / max * 100}%">${dist[k]}</span>
             <b>${t.emoji}</b><span>${esc(t.name)}</span></div>`).join('')}</div>
         <p class="last">초등과는 이 <em>네 가지 눈</em>을 모두 배웁니다.</p>
-        <p class="qnext">💬 궁금한 건 휴대폰 '질문' 버튼으로 — 2부(14:00)에서 답합니다</p>
+        <p class="qnext">💬 궁금한 건 휴대폰 '질문' 버튼으로 — 이어서 마무리 Q&A에서 답합니다</p>
       </section>`;
   }
 
@@ -172,17 +170,17 @@ export function startHost(app, sync, { local, hostKey }) {
     });
   }
 
-  /* 2부: 진로 이야기 순서 + 익명 질문판. 카드를 누르면 크게, '답했어요'는 이 노트북에만 기억 */
+  /* 마무리 Q&A: 익명 질문판. 카드를 누르면 크게, '답했어요'는 이 노트북에만 기억 */
   let questions = [], spot = null;
   const answered = new Set(JSON.parse(localStorage.getItem(ANSWERED) || '[]'));
   function qa() {
     app.innerHTML = `
       <section class="h-qa">
-        <header><span class="badge">2부 · 14:00~15:00</span><h2>초등교사, <em>그다음은?</em> 진로 Q&A</h2></header>
-        <ol class="talk-steps">${TALK.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
+        <header><span class="badge">마무리 · ~14:00</span><h2>궁금한 것, <em>물어보세요</em></h2></header>
         <p class="qcount">💬 받은 질문 <b id="qn">0</b>개 <span class="muted">· 카드를 누르면 크게 보여요</span></p>
         <div class="qcards" id="qc"></div>
         <figure class="qr-mini"><img src="img/qr.png" alt=""><figcaption>질문은 휴대폰으로</figcaption></figure>
+        <p class="bye">나가는 길에 설문지를 내고 기념품 받아 가세요 🎁</p>
       </section>`;
     drawQuestions();
   }
@@ -245,13 +243,12 @@ export function startHost(app, sync, { local, hostKey }) {
   big.innerHTML = `<img src="img/qr.png" alt=""><p>${esc(STUDENT_URL.replace(/^https?:\/\//, ''))}</p>`;
   document.body.append(big);
 
-  /* 시계: 1부 13:50, 2부 14:50부터 마무리 알림(1부 13:00~14:00, 2부 14:00~15:00) */
+  /* 시계: 13:50부터 마무리 알림(13:00~14:00) */
   const clock = document.createElement('div'); clock.className = 'clock'; document.body.append(clock);
   const tickClock = () => {
     const d = new Date(), hm = d.getHours() * 60 + d.getMinutes();
     clock.textContent = d.toTimeString().slice(0, 5) + (local ? ' · local' : '');
-    const part = ORDER[i]?.scene === 'qa' ? 15 * 60 : 14 * 60;
-    document.body.classList.toggle('late', hm >= part - 10 && hm < part + 30);
+    document.body.classList.toggle('late', hm >= 14 * 60 - 10 && hm < 14 * 60 + 30);
   };
   tickClock(); setInterval(tickClock, 15000);
 

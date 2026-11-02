@@ -3,7 +3,7 @@
              nicks:{익명ID:'별명'}, hidden:{익명ID:true},
              questions:{질문ID:{t:'질문', at:시각}}, qhidden:{질문ID:true} }
    (Firebase에서는 hidden이 state/h, qhidden이 state/qh)
-   scene: 0 = 시작 화면, 'intro' = 학과 소개(LAMP 홈페이지), 1~7 = 장면, 'end' = 결과, 'qa' = 2부 진로 Q&A */
+   scene: 0 = 시작 화면, 'intro' = 학과 소개(LAMP 홈페이지), 1~7 = 장면, 'end' = 결과, 'qa' = 마무리 Q&A(질문함) */
 import { tally, KEYS } from './logic.js';
 
 const ID_KEY = 'jnue-teacher-day.cid';

@@ -116,7 +116,7 @@ test('질문 다듬기: 앞뒤 공백 제거, 1~120자', () => {
   assert.equal(cleanQuestion(null), null);
 });
 
-test('2부 상태 인코딩', () => {
+test('마무리 Q&A 상태 인코딩', () => {
   assert.deepEqual(decState(encState({ scene: 'qa', step: 'situation' })), { scene: 'qa', step: 'situation' });
 });
 

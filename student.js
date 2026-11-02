@@ -16,7 +16,7 @@ export function startStudent(app, sync) {
   if (nick) sync.setNick(nick); // 서버 쪽 별명이 지워졌어도 다시 올린다
 
   function render() {
-    if (fab) fab.hidden = st?.scene === 'qa'; // 2부 화면에는 질문 칸이 이미 있음
+    if (fab) fab.hidden = st?.scene === 'qa'; // 마무리 Q&A 화면에는 질문 칸이 이미 있음
     if (!st) return wait();
     if (st.scene === 0) { mine = {}; saveMine(mine); return wait(); } // 시작 전이면 지난 리허설 표를 지운다
     if (st.scene === 'end') return result();
@@ -104,26 +104,26 @@ export function startStudent(app, sync) {
         <ul class="courses">${[...new Set(ts.flatMap(t => t.courses))].map(c => `<li>${esc(c)}</li>`).join('')}</ul>
         <p class="last">초등과는 이 <b>네 가지 눈</b>을 모두 배웁니다.</p>
         ${allTypes()}
-        <p class="muted qhint">💬 궁금한 건 오른쪽 아래 '질문' 버튼으로! 2부(14:00)에서 답해요</p>
+        <p class="muted qhint">💬 궁금한 건 오른쪽 아래 '질문' 버튼으로! 마무리 Q&A에서 답해요</p>
       </section>`;
   }
   /* ── 학과 소개: 앞 화면과 같은 홈페이지를 휴대폰으로 ── */
   function intro() {
     app.innerHTML = `
       <section class="s-wait">
-        <p class="kicker">1부 · 초등교육과 소개</p>
+        <p class="kicker">초등교육과 소개</p>
         <h1>초등교육과는<br><em>무엇을 배울까?</em></h1>
         <p class="muted">앞 화면을 함께 봐 주세요. 소개가 끝나면 교실 딜레마가 시작돼요.</p>
         <a class="ok" href="${INTRO_URL}" target="_blank" rel="noopener">📱 휴대폰으로 같이 보기</a>
       </section>`;
   }
 
-  /* ── 2부: 진로 Q&A ── */
+  /* ── 마무리 Q&A ── */
   function qa() {
     app.innerHTML = `
       <section class="s-qa">
-        <p class="kicker">2부 · 진로 Q&A</p>
-        <h2>초등교사, <em>그다음은?</em></h2>
+        <p class="kicker">마무리 · 질문 Q&A</p>
+        <h2>궁금한 것, <em>물어보세요</em></h2>
         <p class="muted">궁금한 것을 익명으로 보내 주세요. 앞 화면에 뜨면 학과장이 답합니다.</p>
         ${askForm()}
         <button type="button" class="link" id="mytype">내 교사 유형 다시 보기</button>
@@ -132,7 +132,7 @@ export function startStudent(app, sync) {
     app.querySelector('#mytype').addEventListener('click', result);
   }
 
-  /* 질문 보내기 칸(2부 화면·질문 버튼 공용) */
+  /* 질문 보내기 칸(마무리 화면·질문 버튼 공용) */
   const askForm = () => `
     <form class="ask">
       <textarea maxlength="120" rows="3" placeholder="예) 심화과정은 나중에 바꿀 수 있나요?"></textarea>
@@ -143,7 +143,7 @@ export function startStudent(app, sync) {
     f.addEventListener('submit', async e => {
       e.preventDefault();
       const ta = f.querySelector('textarea');
-      if (await sync.ask(ta.value)) { ta.value = ''; f.querySelector('.err').hidden = true; toast('질문을 보냈어요! 2부에서 답해 드릴게요'); done?.(); }
+      if (await sync.ask(ta.value)) { ta.value = ''; f.querySelector('.err').hidden = true; toast('질문을 보냈어요! 마무리 시간에 답해 드릴게요'); done?.(); }
       else f.querySelector('.err').hidden = false;
     });
   }
@@ -158,7 +158,7 @@ export function startStudent(app, sync) {
   fab.addEventListener('click', () => {
     if (document.querySelector('.qsheet')) return;
     const sh = document.createElement('div'); sh.className = 'qsheet';
-    sh.innerHTML = `<div class="box"><p class="kicker">익명 질문 · 2부(14:00)에서 답해요</p>${askForm()}
+    sh.innerHTML = `<div class="box"><p class="kicker">익명 질문 · 마무리 시간에 답해요</p>${askForm()}
       <button type="button" class="link close">닫기</button></div>`;
     document.body.append(sh);
     const close = () => sh.remove();

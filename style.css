@@ -194,12 +194,10 @@ body.host .fab { display: none; }
 .qhint { margin-top: 1.2em; }
 .qnext { font-family: var(--hand); font-size: 1.6em; margin: .4em 0 0; }
 
-/* 발표: 2부 */
+/* 발표: 마무리 Q&A */
 .h-qa { height: 100%; display: flex; flex-direction: column; gap: 1.6vh; position: relative; }
 .h-qa header { display: flex; align-items: center; gap: 1em; padding-right: 7em; }
 .h-qa header h2 { font-size: 2.3em; }
-.talk-steps { list-style: none; margin: 0; padding: 0; display: flex; gap: .6em; flex-wrap: wrap; }
-.talk-steps li { font-family: var(--display); font-size: 1.15em; background: var(--card); border: var(--line); border-radius: 999px; padding: .2em .9em; }
 .qcount { font-family: var(--display); font-size: 1.4em; margin: 0; }
 .qcount b { color: var(--accent); font-weight: 400; }
 .qcards { flex: 1; min-height: 0; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(22em, 1fr)); gap: 1.2vh 1.2vw;
@@ -212,6 +210,7 @@ body.host .fab { display: none; }
   border-radius: 14px; padding: .5em; }
 .qr-mini img { width: 100%; image-rendering: pixelated; }
 .qr-mini figcaption { font-family: var(--display); font-size: .8em; }
+.bye { font-family: var(--hand); font-size: 1.5em; margin: 0 13vw 0 0; }
 .spot { position: fixed; inset: 0; z-index: 45; background: rgba(29,29,31,.55); display: grid; place-items: center; }
 .spot .box { width: min(80vw, 1400px); background: var(--card); border: var(--line); border-radius: 26px; box-shadow: 10px 10px 0 var(--ink); padding: 1.4em 2em; }
 .spot .no { font-family: var(--display); color: var(--accent); font-size: 1.6em; margin: 0; }
